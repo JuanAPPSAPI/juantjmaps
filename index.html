@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>JuanTJMaps</title>
+
+    <!-- Material Design 3 - Google Fonts & Symbols -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        :root {
+            /* MD3 Light Theme */
+            --md-sys-color-primary: #386a20;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-primary-container: #b9f497;
+            --md-sys-color-on-primary-container: #062100;
+            --md-sys-color-secondary: #8d5000;
+            --md-sys-color-on-secondary: #ffffff;
+            --md-sys-color-secondary-container: #ffddba;
+            --md-sys-color-on-secondary-container: #2d1600;
+            --md-sys-color-tertiary: #39656c;
+            --md-sys-color-on-tertiary: #ffffff;
+            --md-sys-color-tertiary-container: #bcebf2;
+            --md-sys-color-on-tertiary-container: #001f24;
+            --md-sys-color-error: #ba1a1a;
+            --md-sys-color-on-error: #ffffff;
+            --md-sys-color-error-container: #ffdad6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-surface: #fdf8f4;
+            --md-sys-color-on-surface: #1c1b17;
+            --md-sys-color-surface-variant: #e0e0d8;
+            --md-sys-color-on-surface-variant: #44483f;
+            --md-sys-color-outline: #74796d;
+            --md-sys-color-outline-variant: #c4c8bb;
+            --md-sys-color-inverse-surface: #31302b;
+            --md-sys-color-inverse-on-surface: #f4efe9;
+            --md-sys-color-scrim: #000000;
+            --md-sys-color-shadow: #000000;
+
+            /* Elevation */
+            --md-elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+            --md-elevation-2: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+            --md-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+            --md-elevation-4: 0 6px 10px 4px rgba(0, 0, 0, 0.15), 0 2px 3px 0 rgba(0, 0, 0, 0.3);
+            --md-elevation-5: 0 8px 12px 6px rgba(0, 0, 0, 0.15), 0 4px 4px 0 rgba(0, 0, 0, 0.3);
+
+            /* Shape */
+            --md-shape-corner-extra-small: 4px;
+            --md-shape-corner-small: 8px;
+            --md-shape-corner-medium: 12px;
+            --md-shape-corner-large: 16px;
+            --md-shape-corner-extra-large: 28px;
+            --md-shape-corner-full: 999px;
+
+            /* Transitions */
+            --md-motion-duration-short: 200ms;
+            --md-motion-duration-medium: 350ms;
+            --md-motion-duration-long: 500ms;
+            --md-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+            --md-motion-easing-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Splash / Loading */
+        .splash {
+            position: fixed;
+            inset: 0;
+            background: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 16px;
+            transition: opacity 0.4s var(--md-motion-easing-standard);
+        }
+        .splash.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .splash-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--md-sys-color-primary);
+            border-radius: var(--md-shape-corner-extra-large);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.08);
+            }
+        }
+        .splash-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--md-sys-color-primary);
+            letter-spacing: -0.5px;
+        }
+        .splash-subtitle {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--md-sys-color-surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: all 0.4s var(--md-motion-easing-standard);
+        }
+        .login-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        .login-card {
+            background: var(--md-sys-color-surface);
+            border-radius: var(--md-shape-corner-extra-large);
+            padding: 32px 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: var(--md-elevation-3);
+            text-align: center;
+        }
+        .login-card .logo-icon {
+            font-size: 56px;
+            color: var(--md-sys-color-primary);
+            margin-bottom: 8px;
+        }
+        .login-card h1 {
+            font-size: 26px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .login-card .subtitle {
+            font-size: 14px;
+            color: var(--md-sys-color-on-surface-variant);
+            margin-bottom: 24px;
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid var(--md-sys-color-outline);
+            border-radius: var(--md-shape-corner-small);
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--md-sys-color-surface);
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .input-field:focus {
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 0 0 3px rgba(56, 106, 32, 0.12);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s var(--md-motion-easing-standard);
+            letter-spacing: 0.1px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-filled {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: var(--md-elevation-1);
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+        }
+        .btn-filled:hover {
+            box-shadow: var(--md-elevation-2);
+            filter: brightness(1.08);
+        }
+        .btn-filled:active {
+            box-shadow: var(--md-elevation-1);
+            filter: brightness(0.94);
+            transform: scale(0.97);
+        }
+        .btn-tonal {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        .btn-outlined {
+            background: transparent;
+            border: 1.5px solid var(--md-sys-color-outline);
+            color: var(--md-sys-color-primary);
+        }
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--md-shape-corner-full);
+            padding: 0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--md-sys-color-on-surface-variant);
+            transition: all 0.2s;
+        }
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        /* Main App */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .app-container.visible {
+            opacity: 1;
+        }
+
+        /* Navigation Drawer */
+        .nav-drawer {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 320px;
+            max-width: 85vw;
+            background: var(--md-sys-color-surface);
+            z-index: 200;
+            box-shadow: var(--md-elevation-4);
+            transform: translateX(-100%);
+            transition: transform 0.35s var(--md-motion-easing-emphasized);
+            display: flex;
+            flex-direction: column;
+            border-radius: 0 var(--md-shape-corner-large) var(--md-shape-corner-large) 0;
+        }
+        .nav-drawer.open {
+            transform: translateX(0);
+        }
+        .nav-drawer-header {
+            padding: 24px 20px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+        }
+        .nav-drawer-header .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--md-shape-corner-full);
+            background: var(--md-sys-color-primary-container);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--md-sys-color-on-primary-container);
+            font-weight: 600;
+            font-size: 20px;
+        }
+        .nav-drawer-header .user-info .name {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        .nav-drawer-header .user-info .role {
+            font-size: 12px;
+            color: var(--md-sys-color-on-surface-variant);
+            text-transform: capitalize;
+        }
+        .nav-drawer-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: var(--md-shape-corner-full);
+            margin: 2px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .nav-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .nav-item.active {
+            background: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+        .nav-item .icon {
+            font-size: 22px;
+        }
+        .nav-divider {
+            height: 1px;
+            background: var(--md-sys-color-outline-variant);
+            margin: 8px 20px;
+        }
+
+        /* Scrim */
+        .scrim {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s;
+        }
+        .scrim.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Top App Bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            pointer-events: none;
+        }
+        .top-bar>* {
+            pointer-events: all;
+        }
+        .top-bar .chip {
+            background: var(--md-sys-color-surface);
+            box-shadow: var(--md-elevation-2);
+            border-radius: var(--md-shape-corner-full);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            color: var(--md-sys-color-on-surface);
+        }
+        .top-bar .chip:hover {
+            box-shadow: var(--md-elevation-3);
+        }
+        .top-bar .spacer {
+            flex: 1;
+            pointer-events: none;
+        }
+        .top-bar .menu-btn {
+            background: var(--md-sys-color-surface);
+            box-shadow: var(--md-elevation-2);
+            border-radius: var(--md-shape-corner-full);
+            width: 44px;
+            height: 44px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: var(--md-sys-color-on-surface);
+            transition: all 0.2s;
+        }
+
+        /* Map */
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* FAB */
+        .fab {
+            position: absolute;
+            bottom: 24px;
+            right: 20px;
+            z-index: 60;
+            width: 56px;
+            height: 56px;
+            border-radius: var(--md-shape-corner-large);
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            box-shadow: var(--md-elevation-3);
+            border: none;
+            cursor: pointer;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s var(--md-motion-easing-standard);
+        }
+        .fab:hover {
+            box-shadow: var(--md-elevation-4);
+            transform: scale(1.04);
+        }
+        .fab:active {
+            transform: scale(0.94);
+        }
+        .fab.ar-fab {
+            bottom: 100px;
+            right: 20px;
+            background: var(--md-sys-color-tertiary-container);
+            color: var(--md-sys-color-on-tertiary-container);
+        }
+
+        /* Bottom Sheet / Panel */
+        .bottom-sheet {
+            position: absolute;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            z-index: 55;
+            background: var(--md-sys-color-surface);
+            border-radius: var(--md-shape-corner-extra-large) var(--md-shape-corner-extra-large) 0 0;
+            box-shadow: var(--md-elevation-5);
+            max-height: 70vh;
+            transition: bottom 0.4s var(--md-motion-easing-emphasized);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .bottom-sheet.open {
+            bottom: 0;
+        }
+        .bottom-sheet-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--md-sys-color-outline-variant);
+            border-radius: 2px;
+            margin: 12px auto;
+            flex-shrink: 0;
+        }
+        .bottom-sheet-content {
+            padding: 0 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .bottom-sheet-content h3 {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .bottom-sheet-content .category-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 6px;
+            margin-bottom: 8px;
+        }
+
+        /* Modal / Dialog */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .modal {
+            background: var(--md-sys-color-surface);
+            border-radius: var(--md-shape-corner-extra-large);
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--md-elevation-5);
+            transform: translateY(20px);
+            transition: transform 0.35s var(--md-motion-easing-emphasized);
+        }
+        .modal-overlay.visible .modal {
+            transform: translateY(0);
+        }
+        .modal h2 {
+            font-size: 22px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Photo thumbnail */
+        .photo-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--md-shape-corner-medium);
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid var(--md-sys-color-outline-variant);
+            transition: all 0.2s;
+        }
+        .photo-thumb:hover {
+            border-color: var(--md-sys-color-primary);
+            transform: scale(1.05);
+        }
+        .photos-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        /* AR View */
+        .ar-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 400;
+            background: #000;
+            display: none;
+            flex-direction: column;
+        }
+        .ar-overlay.active {
+            display: flex;
+        }
+        .ar-video {
+            flex: 1;
+            object-fit: cover;
+            width: 100%;
+        }
+        .ar-canvas {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .ar-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            z-index: 5;
+        }
+        .ar-controls button {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--md-elevation-3);
+        }
+        .ar-close {
+            background: var(--md-sys-color-error);
+            color: white;
+        }
+        .ar-marker-label {
+            position: absolute;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            padding: 4px 10px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: var(--md-elevation-2);
+            transform: translate(-50%, -50%);
+        }
+        .ar-distance {
+            font-size: 10px;
+            opacity: 0.7;
+            display: block;
+            text-align: center;
+        }
+
+        /* Toast / Snackbar */
+        .snackbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--md-sys-color-inverse-surface);
+            color: var(--md-sys-color-inverse-on-surface);
+            padding: 14px 24px;
+            border-radius: var(--md-shape-corner-small);
+            font-size: 14px;
+            z-index: 500;
+            box-shadow: var(--md-elevation-3);
+            transition: transform 0.35s var(--md-motion-easing-emphasized);
+            max-width: 90vw;
+            text-align: center;
+        }
+        .snackbar.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Custom field row */
+        .custom-field-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .custom-field-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1.5px solid var(--md-sys-color-outline);
+            border-radius: var(--md-shape-corner-small);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .chip-small {
+            padding: 6px 14px;
+            border-radius: var(--md-shape-corner-full);
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--md-sys-color-outline);
+            background: var(--md-sys-color-surface);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chip-small.selected {
+            background: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .fab {
+                width: 48px;
+                height: 48px;
+                bottom: 16px;
+                right: 12px;
+                font-size: 22px;
+            }
+            .fab.ar-fab {
+                bottom: 80px;
+            }
+            .top-bar .chip {
+                padding: 6px 12px;
+                font-size: 12px;
+                gap: 4px;
+            }
+            .top-bar .chip .icon {
+                font-size: 18px;
+            }
+            .modal {
+                width: 95%;
+                padding: 20px 16px;
+                border-radius: var(--md-shape-corner-large);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Splash -->
+    <div class="splash" id="splash">
+        <div class="splash-logo">
+            <span class="material-symbols-rounded">map</span>
+        </div>
+        <div class="splash-title">JuanTJMaps</div>
+        <div class="splash-subtitle">Cargando...</div>
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <span class="material-symbols-rounded logo-icon">globe</span>
+            <h1>JuanTJMaps</h1>
+            <p class="subtitle">Mapas inteligentes con RA</p>
+            <input type="text" class="input-field" id="loginUser" placeholder="Usuario" autocomplete="username">
+            <input type="password" class="input-field" id="loginPass" placeholder="Contraseña" autocomplete="current-password">
+            <button class="btn btn-filled" id="btnLogin">Iniciar sesión</button>
+            <p style="margin-top:12px;font-size:12px;color:var(--md-sys-color-on-surface-variant);">
+                Invitado: <strong>guest / guest123</strong> &nbsp;|&nbsp; Admin: <strong>admin / admin123</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- Scrim -->
+    <div class="scrim" id="scrim"></div>
+
+    <!-- Navigation Drawer -->
+    <nav class="nav-drawer" id="navDrawer">
+        <div class="nav-drawer-header">
+            <div class="avatar" id="navAvatar">A</div>
+            <div class="user-info">
+                <div class="name" id="navUserName">Admin</div>
+                <div class="role" id="navUserRole">admin</div>
+            </div>
+        </div>
+        <div class="nav-drawer-list">
+            <div class="nav-item active" data-action="map" id="navMap">
+                <span class="material-symbols-rounded icon">map</span> Mapa actual
+            </div>
+            <div class="nav-item" data-action="territories" id="navTerritories">
+                <span class="material-symbols-rounded icon">layers</span> Territorios
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-item" data-action="categories" id="navCategories">
+                <span class="material-symbols-rounded icon">category</span> Categorías
+            </div>
+            <div class="nav-item" data-action="customFields" id="navCustomFields">
+                <span class="material-symbols-rounded icon">playlist_add</span> Campos custom
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-item" data-action="arView" id="navAR">
+                <span class="material-symbols-rounded icon">view_in_ar</span> Realidad Aumentada
+            </div>
+            <div class="nav-divider"></div>
+            <div class="nav-item" data-action="logout" id="navLogout" style="color:var(--md-sys-color-error);">
+                <span class="material-symbols-rounded icon">logout</span> Cerrar sesión
+            </div>
+        </div>
+    </nav>
+
+    <!-- App Container -->
+    <div class="app-container" id="appContainer">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <button class="menu-btn" id="btnMenu" title="Menú">
+                <span class="material-symbols-rounded">menu</span>
+            </button>
+            <button class="chip" id="chipTerritory">
+                <span class="material-symbols-rounded icon" style="font-size:18px;">layers</span>
+                <span id="currentTerritoryName">Territorio Principal</span>
+                <span class="material-symbols-rounded" style="font-size:16px;">arrow_drop_down</span>
+            </button>
+            <div class="spacer"></div>
+            <button class="menu-btn" id="btnCenterMap" title="Centrar mapa">
+                <span class="material-symbols-rounded">my_location</span>
+            </button>
+        </div>
+
+        <!-- Map -->
+        <div id="map"></div>
+
+        <!-- FABs -->
+        <button class="fab ar-fab" id="fabAR" title="Realidad Aumentada">
+            <span class="material-symbols-rounded">view_in_ar</span>
+        </button>
+        <button class="fab" id="fabAdd" title="Añadir marcador">
+            <span class="material-symbols-rounded">add_location</span>
+        </button>
+
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet" id="bottomSheet">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-content" id="bottomSheetContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalContent">
+            <!-- Dynamic -->
+        </div>
+    </div>
+
+    <!-- AR Overlay -->
+    <div class="ar-overlay" id="arOverlay">
+        <video class="ar-video" id="arVideo" autoplay playsinline muted></video>
+        <canvas class="ar-canvas" id="arCanvas"></canvas>
+        <div class="ar-controls">
+            <button class="ar-close" id="btnARClose">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Snackbar -->
+    <div class="snackbar" id="snackbar"></div>
+
+    <!-- Hidden file input for photos -->
+    <input type="file" accept="image/*" capture="environment" id="photoInput" style="display:none;">
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
+
+    <script>
+        (function() {
+            // ==================== CONFIGURACIÓN ====================
+            const API_BASE = 'https://juantjmaps.pythonanywhere.com/api';
+            // Cambia esto por tu URL real de PythonAnywhere
+
+            // ==================== ESTADO GLOBAL ====================
+            const state = {
+                user: null,
+                token: null,
+                territories: [],
+                currentTerritoryId: null,
+                categories: [],
+                customFields: [],
+                markers: [],
+                markerLayerGroup: null,
+                selectedMarker: null,
+                isAdmin: false,
+                map: null,
+                arActive: false,
+                arAnimationId: null,
+            };
+
+            // ==================== ELEMENTOS DOM ====================
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+
+            const splash = $('#splash');
+            const loginScreen = $('#loginScreen');
+            const appContainer = $('#appContainer');
+            const scrim = $('#scrim');
+            const navDrawer = $('#navDrawer');
+            const bottomSheet = $('#bottomSheet');
+            const bottomSheetContent = $('#bottomSheetContent');
+            const modalOverlay = $('#modalOverlay');
+            const modalContent = $('#modalContent');
+            const snackbar = $('#snackbar');
+            const arOverlay = $('#arOverlay');
+            const arVideo = $('#arVideo');
+            const arCanvas = $('#arCanvas');
+            const photoInput = $('#photoInput');
+            const currentTerritoryName = $('#currentTerritoryName');
+
+            // ==================== UTILIDADES ====================
+            function showSnackbar(msg, duration = 2500) {
+                snackbar.textContent = msg;
+                snackbar.classList.add('show');
+                clearTimeout(snackbar._timeout);
+                snackbar._timeout = setTimeout(() => snackbar.classList.remove('show'), duration);
+            }
+
+            function showModal(html) {
+                modalContent.innerHTML = html;
+                modalOverlay.classList.add('visible');
+            }
+
+            function hideModal() {
+                modalOverlay.classList.remove('visible');
+            }
+
+            function openBottomSheet(html) {
+                bottomSheetContent.innerHTML = html;
+                bottomSheet.classList.add('open');
+            }
+
+            function closeBottomSheet() {
+                bottomSheet.classList.remove('open');
+                state.selectedMarker = null;
+            }
+
+            function toggleDrawer() {
+                const isOpen = navDrawer.classList.contains('open');
+                if (isOpen) {
+                    navDrawer.classList.remove('open');
+                    scrim.classList.remove('visible');
+                } else {
+                    navDrawer.classList.add('open');
+                    scrim.classList.add('visible');
+                }
+            }
+
+            function closeDrawer() {
+                navDrawer.classList.remove('open');
+                scrim.classList.remove('visible');
+            }
+
+            async function apiCall(endpoint, method = 'GET', body = null, isFormData = false) {
+                const headers = {};
+                if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+                if (!isFormData) headers['Content-Type'] = 'application/json';
+
+                const opts = { method, headers };
+                if (body && !isFormData) opts.body = JSON.stringify(body);
+                if (body && isFormData) opts.body = body;
+
+                const res = await fetch(API_BASE + endpoint, opts);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error en la API');
+                return data;
+            }
+
+            // ==================== AUTENTICACIÓN ====================
+            async function login(username, password) {
+                const data = await apiCall('/login', 'POST', { username, password });
+                state.user = data.user;
+                state.token = data.token;
+                state.isAdmin = data.user.role === 'admin';
+                localStorage.setItem('juanTJMaps_token', state.token);
+                localStorage.setItem('juanTJMaps_user', JSON.stringify(state.user));
+                updateNavUserInfo();
+                return data;
+            }
+
+            function logout() {
+                state.user = null;
+                state.token = null;
+                state.isAdmin = false;
+                localStorage.removeItem('juanTJMaps_token');
+                localStorage.removeItem('juanTJMaps_user');
+                closeDrawer();
+                showLoginScreen();
+            }
+
+            function updateNavUserInfo() {
+                if (state.user) {
+                    $('#navUserName').textContent = state.user.username;
+                    $('#navUserRole').textContent = state.user.role;
+                    $('#navAvatar').textContent = state.user.username.charAt(0).toUpperCase();
+                }
+            }
+
+            function showLoginScreen() {
+                loginScreen.classList.remove('hidden');
+                appContainer.classList.remove('visible');
+            }
+
+            function hideLoginScreen() {
+                loginScreen.classList.add('hidden');
+                appContainer.classList.add('visible');
+            }
+
+            // ==================== MAPA ====================
+            function initMap() {
+                if (state.map) return;
+                state.map = L.map('map', {
+                    center: [40.4168, -3.7038],
+                    zoom: 14,
+                    zoomControl: false,
+                    attributionControl: false,
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 20,
+                }).addTo(state.map);
+
+                L.control.zoom({ position: 'bottomleft' }).addTo(state.map);
+                L.control.attribution({ position: 'bottomright', prefix: '© JuanTJMaps' }).addTo(state.map);
+
+                state.markerLayerGroup = L.layerGroup().addTo(state.map);
+
+                state.map.on('click', function(e) {
+                    if (state.isAdmin && state.currentTerritoryId) {
+                        showAddMarkerModal(e.latlng);
+                    }
+                });
+
+                // Geolocalización
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            state.map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+                            L.circleMarker([pos.coords.latitude, pos.coords.longitude], {
+                                radius: 8,
+                                color: '#386a20',
+                                fillColor: '#386a20',
+                                fillOpacity: 0.6,
+                                weight: 3,
+                            }).addTo(state.map).bindPopup('📍 Tu ubicación');
+                        },
+                        () => {},
+                        { enableHighAccuracy: true, timeout: 8000 }
+                    );
+                }
+            }
+
+            function loadMarkers() {
+                if (!state.currentTerritoryId || !state.markerLayerGroup) return;
+                state.markerLayerGroup.clearLayers();
+                state.markers.forEach(m => {
+                    if (m.territory_id === state.currentTerritoryId) {
+                        const cat = state.categories.find(c => c.id === m.category_id);
+                        const catColor = cat ? cat.color : '#386a20';
+                        const catName = cat ? cat.name : 'Sin categoría';
+
+                        const icon = L.divIcon({
+                            className: 'custom-marker',
+                            html: `
+                        <div style="
+                          width:28px;height:28px;border-radius:50% 50% 50% 0;
+                          background:${catColor};transform:rotate(-45deg);
+                          box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                          border:2px solid white;
+                          display:flex;align-items:center;justify-content:center;
+                        ">
+                          <span style="transform:rotate(45deg);font-size:14px;color:white;">📍</span>
+                        </div>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 28],
+                            popupAnchor: [0, -28],
+                        });
+
+                        const marker = L.marker([m.lat, m.lng], { icon }).addTo(state
+                            .markerLayerGroup);
+                        marker.bindPopup(`
+                  <div style="font-family:Roboto,sans-serif;min-width:140px;">
+                    <strong>${m.name || 'Marcador'}</strong><br>
+                    <span style="font-size:12px;color:#666;">${catName}</span>
+                    ${m.photos && m.photos.length > 0 ? `<br><img src="${m.photos[0]}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-top:4px;">` : ''}
+                    <br><button class="btn btn-tonal" style="margin-top:6px;padding:6px 12px;font-size:11px;" onclick="window._openMarkerDetail('${m.id}')">Ver detalles</button>
+                  </div>
+                `);
+                        marker._markerData = m;
+                    }
+                });
+            }
+
+            window._openMarkerDetail = function(markerId) {
+                const m = state.markers.find(x => x.id === markerId);
+                if (!m) return;
+                state.selectedMarker = m;
+                openMarkerDetailSheet(m);
+            };
+
+            function openMarkerDetailSheet(m) {
+                const cat = state.categories.find(c => c.id === m.category_id);
+                const catName = cat ? cat.name : 'Sin categoría';
+                const catColor = cat ? cat.color : '#888';
+
+                let photosHtml = '';
+                if (m.photos && m.photos.length > 0) {
+                    photosHtml = '<div class="photos-row">' + m.photos.map((p, i) =>
+                        `<img src="${p}" class="photo-thumb" onclick="window._viewPhoto('${p}')" alt="Foto ${i+1}">`
+                    ).join('') + '</div>';
+                }
+
+                let customFieldsHtml = '';
+                if (m.custom_data && Object.keys(m.custom_data).length > 0) {
+                    customFieldsHtml = '<div style="margin-top:8px;"><strong>Campos custom:</strong><ul style="list-style:none;padding:0;">';
+                    for (const [key, val] of Object.entries(m.custom_data)) {
+                        const cf = state.customFields.find(f => f.id === key);
+                        const label = cf ? cf.label : key;
+                        customFieldsHtml +=
+                            `<li style="font-size:13px;padding:2px 0;">• <strong>${label}:</strong> ${val}</li>`;
+                    }
+                    customFieldsHtml += '</ul></div>';
+                }
+
+                const html = `
+              <h3>${m.name || 'Marcador sin nombre'}</h3>
+              <span class="category-badge" style="background:${catColor}22;color:${catColor};border:1px solid ${catColor};">${catName}</span>
+              <p style="font-size:13px;color:var(--md-sys-color-on-surface-variant);margin-top:4px;">
+                Lat: ${m.lat.toFixed(6)} · Lng: ${m.lng.toFixed(6)}
+              </p>
+              ${customFieldsHtml}
+              ${photosHtml}
+              ${state.isAdmin ? `
+                <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-tonal" onclick="window._addPhotoToMarker('${m.id}')">
+                    <span class="material-symbols-rounded" style="font-size:18px;">add_a_photo</span> Añadir foto
+                  </button>
+                  <button class="btn btn-outlined" onclick="window._editMarker('${m.id}')">
+                    <span class="material-symbols-rounded" style="font-size:18px;">edit</span> Editar
+                  </button>
+                  <button class="btn btn-outlined" style="color:var(--md-sys-color-error);border-color:var(--md-sys-color-error);" onclick="window._deleteMarker('${m.id}')">
+                    <span class="material-symbols-rounded" style="font-size:18px;">delete</span> Eliminar
+                  </button>
+                </div>
+              ` : ''}
+            `;
+                openBottomSheet(html);
+            }
+
+            window._viewPhoto = function(src) {
+                showModal(`
+              <div style="text-align:center;">
+                <img src="${src}" style="max-width:100%;max-height:70vh;border-radius:var(--md-shape-corner-medium);">
+                <br><button class="btn btn-tonal" style="margin-top:12px;" onclick="hideModal()">Cerrar</button>
+              </div>
+            `);
+            };
+
+            window._addPhotoToMarker = function(markerId) {
+                state._pendingPhotoMarkerId = markerId;
+                photoInput.click();
+            };
+
+            window._editMarker = function(markerId) {
+                const m = state.markers.find(x => x.id === markerId);
+                if (!m) return;
+                showEditMarkerModal(m);
+            };
+
+            window._deleteMarker = function(markerId) {
+                if (!confirm('¿Eliminar este marcador?')) return;
+                apiCall(`/territories/${state.currentTerritoryId}/markers/${markerId}`, 'DELETE')
+                    .then(() => {
+                        state.markers = state.markers.filter(x => x.id !== markerId);
+                        loadMarkers();
+                        closeBottomSheet();
+                        showSnackbar('Marcador eliminado');
+                    })
+                    .catch(err => showSnackbar('Error: ' + err.message));
+            };
+
+            function showAddMarkerModal(latlng) {
+                let catsHtml = state.categories.map(c =>
+                    `<span class="chip-small cat-chip" data-cat-id="${c.id}" style="background:${c.color}22;border-color:${c.color};">${c.name}</span>`
+                ).join('');
+
+                let cfieldsHtml = state.customFields.map(cf =>
+                    `<div class="custom-field-row">
+                <label style="font-size:12px;min-width:60px;">${cf.label}:</label>
+                <input type="${cf.type === 'number' ? 'number' : 'text'}" class="cf-input" data-cf-id="${cf.id}" placeholder="${cf.label}">
+              </div>`
+                ).join('');
+
+                const html = `
+              <h2>Añadir marcador</h2>
+              <input type="text" class="input-field" id="markerName" placeholder="Nombre del lugar">
+              <p style="font-size:13px;margin:4px 0;">Categoría:</p>
+              <div id="catSelector" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${catsHtml}</div>
+              ${cfieldsHtml}
+              <p style="font-size:12px;color:var(--md-sys-color-on-surface-variant);">Lat: ${latlng.lat.toFixed(6)} · Lng: ${latlng.lng.toFixed(6)}</p>
+              <div class="modal-actions">
+                <button class="btn btn-outlined" onclick="hideModal()">Cancelar</button>
+                <button class="btn btn-filled" id="btnSaveMarker">Guardar</button>
+              </div>
+            `;
+                showModal(html);
+
+                let selectedCatId = state.categories.length > 0 ? state.categories[0].id : null;
+                setTimeout(() => {
+                    const catChips = $$('#catSelector .cat-chip');
+                    catChips.forEach(ch => {
+                        ch.addEventListener('click', () => {
+                            catChips.forEach(c => c.classList.remove('selected'));
+                            ch.classList.add('selected');
+                            selectedCatId = ch.dataset.catId;
+                        });
+                    });
+                    if (catChips.length > 0) catChips[0].classList.add('selected');
+
+                    $('#btnSaveMarker').addEventListener('click', async () => {
+                        const name = $('#markerName').value || 'Sin nombre';
+                        const customData = {};
+                        $$('.cf-input').forEach(inp => {
+                            if (inp.value.trim()) customData[inp.dataset.cfId] = inp.value
+                                .trim();
+                        });
+                        try {
+                            const newMarker = await apiCall(
+                                `/territories/${state.currentTerritoryId}/markers`, 'POST', {
+                                    name,
+                                    lat: latlng.lat,
+                                    lng: latlng.lng,
+                                    category_id: selectedCatId,
+                                    custom_data: customData,
+                                    photos: [],
+                                });
+                            state.markers.push(newMarker.marker);
+                            loadMarkers();
+                            hideModal();
+                            showSnackbar('Marcador añadido');
+                        } catch (err) {
+                            showSnackbar('Error: ' + err.message);
+                        }
+                    });
+                }, 100);
+            }
+
+            function showEditMarkerModal(m) {
+                let catsHtml = state.categories.map(c =>
+                    `<span class="chip-small cat-chip-edit" data-cat-id="${c.id}" style="background:${c.color}22;border-color:${c.color};${c.id === m.category_id ? 'border-width:3px;' : ''}">${c.name}</span>`
+                ).join('');
+
+                let cfieldsHtml = state.customFields.map(cf => {
+                    const val = m.custom_data && m.custom_data[cf.id] ? m.custom_data[cf.id] : '';
+                    return `<div class="custom-field-row">
+                <label style="font-size:12px;min-width:60px;">${cf.label}:</label>
+                <input type="${cf.type === 'number' ? 'number' : 'text'}" class="cf-input-edit" data-cf-id="${cf.id}" value="${val}" placeholder="${cf.label}">
+              </div>`;
+                }).join('');
+
+                const html = `
+              <h2>Editar marcador</h2>
+              <input type="text" class="input-field" id="editMarkerName" value="${m.name || ''}" placeholder="Nombre">
+              <p style="font-size:13px;">Categoría:</p>
+              <div id="editCatSelector" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${catsHtml}</div>
+              ${cfieldsHtml}
+              <div class="modal-actions">
+                <button class="btn btn-outlined" onclick="hideModal()">Cancelar</button>
+                <button class="btn btn-filled" id="btnUpdateMarker">Actualizar</button>
+              </div>
+            `;
+                showModal(html);
+                let selCat = m.category_id;
+                setTimeout(() => {
+                    $$('#editCatSelector .cat-chip-edit').forEach(ch => {
+                        ch.addEventListener('click', () => {
+                            $$('#editCatSelector .cat-chip-edit').forEach(c => c
+                                .style.borderWidth = '1px');
+                            ch.style.borderWidth = '3px';
+                            selCat = ch.dataset.catId;
+                        });
+                    });
+                    $('#btnUpdateMarker').addEventListener('click', async () => {
+                        const name = $('#editMarkerName').value || m.name;
+                        const customData = {};
+                        $$('.cf-input-edit').forEach(inp => {
+                            if (inp.value.trim()) customData[inp.dataset.cfId] = inp
+                                .value.trim();
+                        });
+                        try {
+                            const updated = await apiCall(
+                                `/territories/${state.currentTerritoryId}/markers/${m.id}`,
+                                'PUT', {
+                                    name,
+                                    category_id: selCat,
+                                    custom_data: customData,
+                                });
+                            const idx = state.markers.findIndex(x => x.id === m.id);
+                            if (idx >= 0) state.markers[idx] = updated.marker;
+                            loadMarkers();
+                            hideModal();
+                            closeBottomSheet();
+                            showSnackbar('Marcador actualizado');
+                        } catch (err) {
+                            showSnackbar('Error: ' + err.message);
+                        }
+                    });
+                }, 100);
+            }
+
+            // ==================== TERRITORIOS ====================
+            async function loadTerritories() {
+                try {
+                    const data = await apiCall('/territories');
+                    state.territories = data.territories;
+                    if (!state.currentTerritoryId && state.territories.length > 0) {
+                        state.currentTerritoryId = state.territories[0].id;
+                    }
+                    updateTerritoryChip();
+                } catch (e) {
+                    console.error('Error cargando territorios:', e);
+                }
+            }
+
+            function updateTerritoryChip() {
+                const t = state.territories.find(x => x.id === state.currentTerritoryId);
+                currentTerritoryName.textContent = t ? t.name : 'Sin territorio';
+                loadMarkers();
+            }
+
+            function showTerritorySelector() {
+                let html = '<h2>Territorios</h2><div style="display:flex;flex-direction:column;gap:8px;">';
+                state.territories.forEach(t => {
+                    const active = t.id === state.currentTerritoryId;
+                    html += `
+                <div style="padding:12px;border-radius:var(--md-shape-corner-medium);cursor:pointer;
+                  background:${active ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-variant)'};
+                  display:flex;justify-content:space-between;align-items:center;"
+                  onclick="window._selectTerritory('${t.id}')">
+                  <span style="font-weight:500;">${t.name}</span>
+                  <span style="font-size:12px;">${t.description || ''}</span>
+                </div>`;
+                });
+                html += '</div>';
+                if (state.isAdmin) {
+                    html += `
+                <div class="modal-actions" style="margin-top:16px;">
+                  <button class="btn btn-filled" onclick="window._showAddTerritory()">+ Nuevo territorio</button>
+                </div>`;
+                }
+                html += '<div class="modal-actions"><button class="btn btn-outlined" onclick="hideModal()">Cerrar</button></div>';
+                showModal(html);
+            }
+
+            window._selectTerritory = function(id) {
+                state.currentTerritoryId = id;
+                updateTerritoryChip();
+                hideModal();
+                const t = state.territories.find(x => x.id === id);
+                if (t && t.center_lat && t.center_lng) {
+                    state.map.setView([t.center_lat, t.center_lng], t.zoom || 14);
+                }
+                showSnackbar('Territorio: ' + (t ? t.name : ''));
+            };
+
+            window._showAddTerritory = function() {
+                const html = `
+              <h2>Nuevo territorio</h2>
+              <input type="text" class="input-field" id="newTerritoryName" placeholder="Nombre del territorio">
+              <input type="text" class="input-field" id="newTerritoryDesc" placeholder="Descripción (opcional)">
+              <div class="modal-actions">
+                <button class="btn btn-outlined" onclick="hideModal()">Cancelar</button>
+                <button class="btn btn-filled" id="btnCreateTerritory">Crear</button>
+              </div>
+            `;
+                showModal(html);
+                setTimeout(() => {
+                    $('#btnCreateTerritory').addEventListener('click', async () => {
+                        const name = $('#newTerritoryName').value.trim();
+                        if (!name) return showSnackbar('El nombre es obligatorio');
+                        const center = state.map.getCenter();
+                        try {
+                            const data = await apiCall('/territories', 'POST', {
+                                name,
+                                description: $('#newTerritoryDesc').value.trim(),
+                                center_lat: center.lat,
+                                center_lng: center.lng,
+                                zoom: state.map.getZoom(),
+                            });
+                            state.territories.push(data.territory);
+                            state.currentTerritoryId = data.territory.id;
+                            updateTerritoryChip();
+                            hideModal();
+                            showSnackbar('Territorio creado');
+                        } catch (err) {
+                            showSnackbar('Error: ' + err.message);
+                        }
+                    });
+                }, 100);
+            };
+
+            // ==================== CATEGORÍAS ====================
+            async function loadCategories() {
+                try {
+                    const data = await apiCall('/categories');
+                    state.categories = data.categories;
+                } catch (e) {
+                    console.error('Error cargando categorías:', e);
+                }
+            }
+
+            function showCategoriesManager() {
+                if (!state.isAdmin) return showSnackbar('Solo administradores');
+                let html = '<h2>Categorías</h2><div style="display:flex;flex-direction:column;gap:6px;">';
+                state.categories.forEach(c => {
+                    html += `
+                <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--md-shape-corner-small);background:var(--md-sys-color-surface-variant);">
+                  <div style="width:20px;height:20px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
+                  <span style="flex:1;">${c.name}</span>
+                  <button class="btn-icon" style="width:32px;height:32px;font-size:18px;color:var(--md-sys-color-error);" onclick="window._deleteCategory('${c.id}')">
+                    <span class="material-symbols-rounded" style="font-size:18px;">delete</span>
+                  </button>
+                </div>`;
+                });
+                html += '</div>';
+                html += `
+              <div style="margin-top:12px;display:flex;gap:8px;">
+                <input type="text" class="input-field" id="newCatName" placeholder="Nueva categoría" style="flex:1;">
+                <input type="color" id="newCatColor" value="#386a20" style="width:44px;height:44px;border:none;cursor:pointer;border-radius:var(--md-shape-corner-small);">
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-outlined" onclick="hideModal()">Cerrar</button>
+                <button class="btn btn-filled" id="btnAddCategory">Añadir</button>
+              </div>`;
+                showModal(html);
+                setTimeout(() => {
+                    $('#btnAddCategory').addEventListener('click', async () => {
+                        const name = $('#newCatName').value.trim();
+                        if (!name) return showSnackbar('Nombre requerido');
+                        try {
+                            const data = await apiCall('/categories', 'POST', { name,
+                                color: $('#newCatColor').value });
+                            state.categories.push(data.category);
+                            showCategoriesManager();
+                            showSnackbar('Categoría añadida');
+                        } catch (err) {
+                            showSnackbar('Error: ' + err.message);
+                        }
+                    });
+                }, 100);
+            }
+
+            window._deleteCategory = async function(id) {
+                if (!confirm('¿Eliminar esta categoría?')) return;
+                try {
+                    await apiCall('/categories/' + id, 'DELETE');
+                    state.categories = state.categories.filter(c => c.id !== id);
+                    showCategoriesManager();
+                    showSnackbar('Categoría eliminada');
+                } catch (err) {
+                    showSnackbar('Error: ' + err.message);
+                }
+            };
+
+            // ==================== CAMPOS CUSTOM ====================
+            async function loadCustomFields() {
+                try {
+                    const data = await apiCall('/custom-fields');
+                    state.customFields = data.custom_fields;
+                } catch (e) {
+                    console.error('Error cargando campos custom:', e);
+                }
+            }
+
+            function showCustomFieldsManager() {
+                if (!state.isAdmin) return showSnackbar('Solo administradores');
+                let html = '<h2>Campos custom</h2><div style="display:flex;flex-direction:column;gap:6px;">';
+                state.customFields.forEach(cf => {
+                    html += `
+                <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--md-shape-corner-small);background:var(--md-sys-color-surface-variant);">
+                  <span style="flex:1;">${cf.label} <small>(${cf.type})</small></span>
+                  <button class="btn-icon" style="width:32px;height:32px;font-size:18px;color:var(--md-sys-color-error);" onclick="window._deleteCustomField('${cf.id}')">
+                    <span class="material-symbols-rounded" style="font-size:18px;">delete</span>
+                  </button>
+                </div>`;
+                });
+                html += '</div>';
+                html += `
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" class="input-field" id="newCfLabel" placeholder="Nombre del campo" style="flex:1;min-width:140px;">
+                <select class="input-field" id="newCfType" style="width:auto;">
+                  <option value="text">Texto</option>
+                  <option value="number">Número</option>
+                  <option value="date">Fecha</option>
+                </select>
+              </div>
+              <div class="modal-actions">
+                <button class="btn btn-outlined" onclick="hideModal()">Cerrar</button>
+                <button class="btn btn-filled" id="btnAddCustomField">Añadir campo</button>
+              </div>`;
+                showModal(html);
+                setTimeout(() => {
+                    $('#btnAddCustomField').addEventListener('click', async () => {
+                        const label = $('#newCfLabel').value.trim();
+                        if (!label) return showSnackbar('Nombre requerido');
+                        try {
+                            const data = await apiCall('/custom-fields', 'POST', { label,
+                                type: $('#newCfType').value });
+                            state.customFields.push(data.custom_field);
+                            showCustomFieldsManager();
+                            showSnackbar('Campo custom añadido');
+                        } catch (err) {
+                            showSnackbar('Error: ' + err.message);
+                        }
+                    });
+                }, 100);
+            }
+
+            window._deleteCustomField = async function(id) {
+                if (!confirm('¿Eliminar este campo custom?')) return;
+                try {
+                    await apiCall('/custom-fields/' + id, 'DELETE');
+                    state.customFields = state.customFields.filter(cf => cf.id !== id);
+                    showCustomFieldsManager();
+                    showSnackbar('Campo eliminado');
+                } catch (err) {
+                    showSnackbar('Error: ' + err.message);
+                }
+            };
+
+            // ==================== FOTOS ====================
+            photoInput.addEventListener('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+                const markerId = state._pendingPhotoMarkerId;
+                if (!markerId) return;
+                try {
+                    // Redimensionar imagen
+                    const resized = await resizeImage(file, 600);
+                    const formData = new FormData();
+                    formData.append('photo', resized, 'photo.jpg');
+                    const data = await apiCall(`/markers/${markerId}/photos`, 'POST', formData, true);
+                    const idx = state.markers.findIndex(x => x.id === markerId);
+                    if (idx >= 0 && data.marker) state.markers[idx] = data.marker;
+                    loadMarkers();
+                    if (state.selectedMarker && state.selectedMarker.id === markerId) {
+                        state.selectedMarker = state.markers.find(x => x.id === markerId);
+                        openMarkerDetailSheet(state.selectedMarker);
+                    }
+                    showSnackbar('Foto añadida');
+                } catch (err) {
+                    showSnackbar('Error: ' + err.message);
+                }
+                this.value = '';
+                state._pendingPhotoMarkerId = null;
+            });
+
+            function resizeImage(file, maxSize) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let w = img.width,
+                                h = img.height;
+                            if (w > h && w > maxSize) { h = h * (maxSize / w);
+                                w = maxSize; } else if (h > maxSize) { w = w * (maxSize / h);
+                                h = maxSize; }
+                            canvas.width = w;
+                            canvas.height = h;
+                            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                            canvas.toBlob((blob) => resolve(new File([blob], 'photo.jpg', { type: 'image/jpeg' })),
+                                'image/jpeg', 0.8);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }            // ==================== REALIDAD AUMENTADA (SOLUCIÓN DEFINITIVA) ====================
+            function openARView() {
+                if (state.arActive) return;
+                arOverlay.classList.add('active');
+                state.arActive = true;
+                startARCamera();
+            }
+
+            function closeARView() {
+                state.arActive = false;
+                arOverlay.classList.remove('active');
+                if (state.arAnimationId) cancelAnimationFrame(state.arAnimationId);
+                if (arVideo.srcObject) {
+                    arVideo.srcObject.getTracks().forEach(t => t.stop());
+                    arVideo.srcObject = null;
+                }
+            }
+
+            async function requestDeviceOrientationPermission() {
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    try {
+                        const permissionState = await DeviceOrientationEvent.requestPermission();
+                        if (permissionState !== 'granted') {
+                            console.warn('Permiso de orientación denegado');
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Error al pedir permiso de orientación:', error);
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            async function startARCamera() {
+                try {
+                    await requestDeviceOrientationPermission();
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+                    });
+                    arVideo.srcObject = stream;
+                    await arVideo.play();
+                    initAROverlay();
+                } catch (err) {
+                    showSnackbar('Error al acceder a la cámara: ' + err.message);
+                    console.error('Error cámara:', err);
+                    closeARView();
+                }
+            }
+
+            function initAROverlay() {
+                const canvas = arCanvas;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                let currentLat = null;
+                let currentLng = null;
+                let heading = 0;
+                const markersNearby = [];
+                let locationAvailable = false;
+                let hasAbsoluteHeading = false;      // true solo si tenemos brújula real
+                let orientationAvailable = false;    // para mostrar estado en panel
+                let calibrationInstruction = '';
+                let lastHeading = null;
+                let headingStableCount = 0;
+                let sensorActive = false;
+
+                // ----- SENSOR DE ORIENTACIÓN ABSOLUTA (API moderna, prioridad máxima) -----
+                async function startAbsoluteSensor() {
+                    if (sensorActive) return;
+                    if ('AbsoluteOrientationSensor' in window) {
+                        try {
+                            const sensor = new AbsoluteOrientationSensor({ frequency: 60 });
+                            sensor.addEventListener('reading', () => {
+                                const q = sensor.quaternion;
+                                const yaw = Math.atan2(2*q[0]*q[1] + 2*q[2]*q[3], 1 - 2*q[1]*q[1] - 2*q[2]*q[2]);
+                                heading = ((yaw * 180 / Math.PI) + 360) % 360;
+                                hasAbsoluteHeading = true;
+                                orientationAvailable = true;
+                                calibrationInstruction = '';
+                                console.log('AbsoluteOrientationSensor heading:', heading);
+                            });
+                            sensor.addEventListener('error', (event) => {
+                                console.error('Error en AbsoluteOrientationSensor:', event.error);
+                                sensorActive = false;
+                            });
+                            sensor.start();
+                            sensorActive = true;
+                            console.log('AbsoluteOrientationSensor iniciado');
+                            return true;
+                        } catch (err) {
+                            console.error('No se pudo iniciar AbsoluteOrientationSensor:', err);
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+
+                // ----- GEOLOCALIZACIÓN -----
+                if (navigator.geolocation) {
+                    console.log('Iniciando watchPosition...');
+                    navigator.geolocation.watchPosition(
+                        (pos) => {
+                            currentLat = pos.coords.latitude;
+                            currentLng = pos.coords.longitude;
+                            locationAvailable = true;
+                            console.log('📍 Ubicación actualizada:', currentLat.toFixed(6), currentLng.toFixed(6));
+                            updateNearbyMarkers();
+                        },
+                        (err) => {
+                            console.error('Error GPS:', err.message);
+                            if (!locationAvailable) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (pos) => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; locationAvailable = true; updateNearbyMarkers(); },
+                                    () => {},
+                                    { enableHighAccuracy: true, timeout: 10000 }
+                                );
+                            }
+                        },
+                        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
+                    );
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; locationAvailable = true; updateNearbyMarkers(); },
+                        () => {},
+                        { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                }
+
+                // ----- EVENTOS DE ORIENTACIÓN (FALLBACK) -----
+                const orientationHandler = (event) => {
+                    // Si el sensor absoluto ya está activo, no hacemos nada con eventos
+                    if (sensorActive) return;
+
+                    console.log('Evento orientación:', event.type, '| alpha:', event.alpha?.toFixed(1), '| absolute:', event.absolute);
+
+                    // 1. WebKit compass heading (iOS, algunos Android)
+                    if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== -1) {
+                        heading = event.webkitCompassHeading;
+                        hasAbsoluteHeading = true;
+                        orientationAvailable = true;
+                        calibrationInstruction = '';
+                        console.log('Brújula WebKit:', heading);
+                        return;
+                    }
+                    // 2. evento deviceorientationabsolute (poco común)
+                    if (event.type === 'deviceorientationabsolute' && event.alpha !== null) {
+                        heading = event.alpha;
+                        hasAbsoluteHeading = true;
+                        orientationAvailable = true;
+                        calibrationInstruction = '';
+                        console.log('Brújula absoluta (evento):', heading);
+                        return;
+                    }
+                    // 3. deviceorientation con absolute === true
+                    if (event.type === 'deviceorientation' && event.alpha !== null && event.absolute === true) {
+                        heading = event.alpha;
+                        hasAbsoluteHeading = true;
+                        orientationAvailable = true;
+                        calibrationInstruction = '';
+                        console.log('Brújula absoluta (propiedad absolute):', heading);
+                        return;
+                    }
+                    // 4. Giroscopio relativo (sin brújula): NO actualizamos heading ni orientationAvailable
+                    if (event.type === 'deviceorientation' && event.alpha !== null) {
+                        // Solo mostramos mensaje de calibración, sin modificar heading
+                        calibrationInstruction = '🔴 Mueve el móvil en forma de ∞ para calibrar';
+                        console.log('Solo giroscopio relativo – no se usa para rumbo');
+                        // Si queremos podríamos guardar un heading relativo en otra variable, pero no lo usamos para dibujar
+                    }
+                };
+
+                window.addEventListener('deviceorientation', orientationHandler, true);
+                window.addEventListener('deviceorientationabsolute', orientationHandler, true);
+                window.addEventListener('compassneedscalibration', () => {
+                    calibrationInstruction = '🔴 La brújula necesita calibración. Mueve el móvil en forma de ∞';
+                    showSnackbar('Calibra la brújula moviendo el teléfono en forma de 8');
+                });
+
+                // Iniciar sensor absoluto (API moderna)
+                startAbsoluteSensor().then(active => {
+                    if (!active) {
+                        console.log('AbsoluteOrientationSensor no disponible, usando eventos');
+                    }
+                });
+
+                // Timeout de emergencia: después de 10s sin brújula, mostramos mensaje pero NO forzamos heading
+                setTimeout(() => {
+                    if (!hasAbsoluteHeading) {
+                        calibrationInstruction = '⚠️ Sin brújula. Usa GPS en movimiento o botón "Fijar Norte".';
+                        console.warn('Sin brújula después de 10 segundos');
+                    }
+                }, 10000);
+
+                function updateNearbyMarkers() {
+                    if (!currentLat || !currentLng) return;
+                    markersNearby.length = 0;
+                    const currentMarkers = state.markers.filter(m => m.territory_id === state.currentTerritoryId);
+                    currentMarkers.forEach(m => {
+                        const dist = getDistance(currentLat, currentLng, m.lat, m.lng);
+                        if (dist <= 5000) {
+                            const bearing = getBearing(currentLat, currentLng, m.lat, m.lng);
+                            markersNearby.push({ ...m, distance: dist, bearing });
+                        }
+                    });
+                    markersNearby.sort((a, b) => a.distance - b.distance);
+                }
+
+                function renderAR() {
+                    if (!state.arActive) return;
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Panel de estado
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    ctx.fillRect(10, 10, 270, 110);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Roboto, sans-serif';
+                    ctx.textAlign = 'left';
+                    const gpsText = locationAvailable ? '✅ GPS: Activo' : '⏳ GPS: Buscando...';
+                    const compassText = hasAbsoluteHeading ? `🧭 Brújula: ${Math.round(heading)}°` : '🔄 Brújula: Calibrando...';
+                    ctx.fillText(gpsText, 20, 30);
+                    ctx.fillText(compassText, 20, 50);
+                    ctx.fillText(`📌 Marcadores: ${markersNearby.length}`, 20, 70);
+                    if (calibrationInstruction) {
+                        ctx.fillStyle = '#FFD600';
+                        ctx.fillText(calibrationInstruction, 20, 95);
+                    }
+
+                    if (locationAvailable && currentLat && currentLng) {
+                        const fov = 70;
+                        const halfFov = fov / 2;
+
+                        if (!hasAbsoluteHeading) {
+                            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                            ctx.font = '18px Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('🧭 Calibrando brújula...', canvas.width/2, canvas.height/2 - 20);
+                            ctx.fillText('Mueve el móvil dibujando un 8 en el aire', canvas.width/2, canvas.height/2 + 10);
+                            ctx.font = '12px Roboto';
+                            ctx.fillText('(Si no funciona, usa el botón Fijar Norte)', canvas.width/2, canvas.height/2 + 35);
+                        } else if (markersNearby.length === 0) {
+                            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                            ctx.font = '16px Roboto, sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('No hay marcadores en esta dirección', canvas.width/2, canvas.height/2);
+                            ctx.fillText('Gira el dispositivo para explorar', canvas.width/2, canvas.height/2 + 25);
+                        }
+
+                        // Solo dibujar marcadores si hay rumbo absoluto
+                        if (hasAbsoluteHeading) {
+                            markersNearby.forEach(m => {
+                                let relBearing = m.bearing - heading;
+                                if (relBearing > 180) relBearing -= 360;
+                                if (relBearing < -180) relBearing += 360;
+                                if (Math.abs(relBearing) < halfFov) {
+                                    const xPercent = 0.5 + (relBearing / halfFov) * 0.5;
+                                    const x = canvas.width * xPercent;
+                                    const y = canvas.height * 0.55;
+                                    const maxDist = 5000;
+                                    const opacity = Math.max(0.3, 1 - m.distance / maxDist);
+                                    const scale = Math.max(0.6, 1 - m.distance / maxDist);
+
+                                    ctx.save();
+                                    ctx.globalAlpha = opacity;
+                                    ctx.translate(x, y);
+                                    ctx.scale(scale, scale);
+
+                                    const cat = state.categories.find(c => c.id === m.category_id);
+                                    const color = cat ? cat.color : '#386a20';
+                                    ctx.beginPath();
+                                    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                                    ctx.fillStyle = color;
+                                    ctx.fill();
+                                    ctx.strokeStyle = 'white';
+                                    ctx.lineWidth = 2;
+                                    ctx.stroke();
+
+                                    ctx.fillStyle = 'white';
+                                    ctx.font = 'bold 11px Roboto, sans-serif';
+                                    ctx.textAlign = 'center';
+                                    ctx.fillText((m.name || 'Lugar').substring(0, 20), 0, 32);
+                                    ctx.font = '10px Roboto, sans-serif';
+                                    ctx.fillText(Math.round(m.distance) + 'm', 0, 46);
+
+                                    ctx.restore();
+                                }
+                            });
+
+                            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                            ctx.fillRect(canvas.width - 80, 10, 70, 50);
+                            ctx.fillStyle = 'white';
+                            ctx.font = 'bold 14px Roboto';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(Math.round(heading) + '° N', canvas.width - 45, 40);
+                        }
+                    } else {
+                        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                        ctx.font = '16px Roboto, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('Obteniendo ubicación GPS...', canvas.width/2, canvas.height/2);
+                        ctx.fillText('Asegúrate de tener activado el GPS', canvas.width/2, canvas.height/2 + 25);
+                    }
+
+                    state.arAnimationId = requestAnimationFrame(renderAR);
+                }
+
+                renderAR();
+            }
+
+            function getDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371000;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function getBearing(lat1, lng1, lat2, lng2) {
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const y = Math.sin(dLng) * Math.cos(lat2 * Math.PI / 180);
+                const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+                    Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLng);
+                let brng = Math.atan2(y, x) * 180 / Math.PI;
+                return (brng + 360) % 360;
+            }
+            // ==================== EVENT LISTENERS ====================
+            $('#btnLogin').addEventListener('click', async () => {
+                const u = $('#loginUser').value.trim();
+                const p = $('#loginPass').value.trim();
+                if (!u || !p) return showSnackbar('Completa todos los campos');
+                try {
+                    await login(u, p);
+                    hideLoginScreen();
+                    await loadAllData();
+                    initMap();
+                    updateTerritoryChip();
+                    showSnackbar('Bienvenido, ' + state.user.username);
+                } catch (err) {
+                    showSnackbar('Error de login: ' + err.message);
+                }
+            });
+
+            $('#btnMenu').addEventListener('click', toggleDrawer);
+            scrim.addEventListener('click', closeDrawer);
+            $('#chipTerritory').addEventListener('click', showTerritorySelector);
+            $('#btnCenterMap').addEventListener('click', () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        state.map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+                    });
+                }
+            });
+            $('#fabAdd').addEventListener('click', () => {
+                if (!state.isAdmin) return showSnackbar('Solo administradores pueden añadir marcadores');
+                if (!state.currentTerritoryId) return showSnackbar('Selecciona un territorio primero');
+                const center = state.map.getCenter();
+                showAddMarkerModal(center);
+            });
+            $('#fabAR').addEventListener('click', openARView);
+            $('#btnARClose').addEventListener('click', closeARView);
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) hideModal();
+            });
+            bottomSheet.querySelector('.bottom-sheet-handle').addEventListener('click', closeBottomSheet);
+
+            // Navegación del drawer
+            $$('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const action = item.dataset.action;
+                    closeDrawer();
+                    switch (action) {
+                        case 'map':
+                            break;
+                        case 'territories':
+                            showTerritorySelector();
+                            break;
+                        case 'categories':
+                            showCategoriesManager();
+                            break;
+                        case 'customFields':
+                            showCustomFieldsManager();
+                            break;
+                        case 'arView':
+                            openARView();
+                            break;
+                        case 'logout':
+                            logout();
+                            break;
+                    }
+                });
+            });
+
+            // ==================== INICIALIZACIÓN ====================
+            async function loadAllData() {
+                await Promise.all([loadTerritories(), loadCategories(), loadCustomFields()]);
+                if (state.currentTerritoryId) {
+                    try {
+                        const data = await apiCall(`/territories/${state.currentTerritoryId}/markers`);
+                        state.markers = data.markers;
+                    } catch (e) {
+                        state.markers = [];
+                    }
+                }
+            }
+
+            async function tryAutoLogin() {
+                const savedToken = localStorage.getItem('juanTJMaps_token');
+                const savedUser = localStorage.getItem('juanTJMaps_user');
+                if (savedToken && savedUser) {
+                    try {
+                        state.token = savedToken;
+                        state.user = JSON.parse(savedUser);
+                        state.isAdmin = state.user.role === 'admin';
+                        updateNavUserInfo();
+                        await loadAllData();
+                        hideLoginScreen();
+                        initMap();
+                        updateTerritoryChip();
+                        return true;
+                    } catch (e) {
+                        localStorage.removeItem('juanTJMaps_token');
+                        localStorage.removeItem('juanTJMaps_user');
+                    }
+                }
+                return false;
+            }
+
+            // Inicio
+            async function bootstrap() {
+                const autoLogged = await tryAutoLogin();
+                if (!autoLogged) {
+                    showLoginScreen();
+                }
+                // Ocultar splash
+                setTimeout(() => {
+                    splash.classList.add('hidden');
+                    setTimeout(() => splash.remove(), 500);
+                }, 1200);
+            }
+
+            bootstrap();
+
+            // Exponer funciones al scope global para callbacks inline
+            window._selectTerritory = window._selectTerritory || function(id) {};
+            window._showAddTerritory = window._showAddTerritory || function() {};
+            window._deleteCategory = window._deleteCategory || function(id) {};
+            window._deleteCustomField = window._deleteCustomField || function(id) {};
+            window._openMarkerDetail = window._openMarkerDetail || function(id) {};
+            window._viewPhoto = window._viewPhoto || function(src) {};
+            window._addPhotoToMarker = window._addPhotoToMarker || function(id) {};
+            window._editMarker = window._editMarker || function(id) {};
+            window._deleteMarker = window._deleteMarker || function(id) {};
+
+            console.log('🗺️ JuanTJMaps inicializado');
+            console.log('📱 Material Design 3 | 🌍 Leaflet Maps | 📷 RA integrada');
+            console.log('🔑 Roles: Admin (crear/editar/eliminar) | Invitado (solo ver)');
+        })();
+    </script>
+</body>
+</html>
